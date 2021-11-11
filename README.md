@@ -1,6 +1,8 @@
 # Computer_Graphics_term_project
 ## 컴퓨터 그래픽스 그림판 제작 텀 프로젝트
 
+### 🛠🛠 리포지토리 최초 Push 인증 오류 시 참고하세요.: https://hyeo-noo.tistory.com/184
+
 ### 2주 회의록 
 * 예제코드에 기능 붙이기(9개)
   * 기능을 3개씩 담당하여 구현 
