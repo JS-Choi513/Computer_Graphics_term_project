@@ -9,6 +9,7 @@ interfacing with a window system */
 #define POINTS 4
 #define TEXT 5
 #define CIRCLE 6
+#define ERASER 7
 
 #include <glut.h>
 #include <stdlib.h>
@@ -16,6 +17,8 @@ interfacing with a window system */
 #include <stdio.h>
 
 void mouse(int, int, int, int);
+//마우스 모션에 쓸 함수
+void mouse2(int, int);
 void key(unsigned char, int, int);
 void display(void);
 void drawSquare(int, int);
@@ -37,6 +40,7 @@ GLsizei wh = 500, ww = 500; /* initial window size */
 GLfloat size = 3.0;   /* half side length of square */
 int draw_mode = 0; /* drawing mode */
 int rx, ry; /*raster position*/
+int cursorX, cursorY; //마우스 위치 저장 변수
 
 GLfloat r = 1.0, g = 1.0, b = 1.0; /* drawing color */
 int fill = 0; /* fill flag */
@@ -118,12 +122,16 @@ void mouse(int btn, int state, int x, int y)
 
         //마우스 왼쪽 버튼이 눌린  좌표 저장 
         where = pick(x, y);
+        cursorX = x;
+        cursorY = y;
         glColor3f(r, g, b);
         //눌린 위치가 메뉴 창인가 아닌가 판단
         if (where != 0)
         {
             count = 0;
             draw_mode = where;
+            cursorX = 0;
+            cursorY = 0;
         }
         //실제 동작 들어감
         else switch (draw_mode)
@@ -228,7 +236,7 @@ void mouse(int btn, int state, int x, int y)
                     double r = fabs(sqrt((xp[0] - x) * (xp[0] - x) + (yp[0] - y) * (yp[0] - y)));
                     if (fill) glBegin(GL_POLYGON);
                     else glBegin(GL_POINTS);
-                    for (i = 0.0; i <= 3600; i += 0.36) {
+                    for (i = 0.0; i <= 3600; i += 0.036) {
                         angle = i * 3.141592 / 180.0;
                         glVertex2f((r * cos(angle)) + xp[0], (r * sin(angle)) + wh - yp[0]);
                     }
@@ -239,12 +247,53 @@ void mouse(int btn, int state, int x, int y)
                 count = 0; 
                 break;
             }
+            case(ERASER):
+                glColor3f(0.8, 0.8, 0.8);
+                y = wh - y;
+                double i, angle;
+                if (x < ww) {
+                    glBegin(GL_POLYGON);
+                    for (i = 0.0; i <= 3600; i += 0.036) {
+                        angle = i * 3.141592 / 180.0;
+                        glVertex2f((10 * cos(angle)) + x, (10 * sin(angle)) + y);
+                    }
+                }
+                glEnd();
+                break;
         }
         glPopAttrib();
         glFlush();
 
     }
 }
+
+//지우개
+void mouse2(int x, int y) {
+
+    switch (draw_mode) {
+        //지우개 모드일때
+        case(ERASER):
+            //현재 마우스 위치에 원하나 그리고
+            int n_y = wh - y;
+            glColor3f(0.8, 0.8, 0.8);
+            double i, angle;
+            if (x < ww) {
+                glBegin(GL_POLYGON);
+                for (i = 0.0; i <= 3600; i += 0.036) {
+                    angle = i * 3.141592 / 180.0;
+                    glVertex2f((10 * cos(angle)) + x, (10 * sin(angle)) + n_y);
+                }
+            }
+            glEnd();
+            // 마우스 좌표 갱신
+            cursorX = x;
+            cursorY = y;
+            break;
+    }
+    glPopAttrib();
+    glFlush();
+}
+
 
 //마우스가 특정 지점에서 클릭되면 해당 지점이 지시하는 값 선택
 int pick(int x, int y)
@@ -258,6 +307,7 @@ int pick(int x, int y)
     else if (x < ww / 2) return TEXT;
     //원그리기 메뉴
     else if (x < ww / 2 + ww / 10) return CIRCLE;
+    else if (x < ww / 2 + ww / 5) return ERASER;
     else return 0;
 }
 
@@ -420,6 +470,8 @@ int main(int argc, char** argv)
     glutReshapeFunc(myReshape);
     glutKeyboardFunc(key);
     glutMouseFunc(mouse);
+    //마우스 모션 함수(지우개)
+    glutMotionFunc(mouse2);
     glutMainLoop();
 
 }
