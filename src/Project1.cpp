@@ -10,6 +10,7 @@ interfacing with a window system */
 #define TEXT 5
 #define CIRCLE 6
 #define ERASER 7
+#define SPRAY 8
 
 #include <glut.h>
 #include <stdlib.h>
@@ -17,10 +18,10 @@ interfacing with a window system */
 #include <stdio.h>
 
 void mouse(int, int, int, int);
-//마우스 모션에 쓸 함수
 void mouse2(int, int);
 void key(unsigned char, int, int);
 void display(void);
+void display2(void); //메뉴창만 초기화
 void drawSquare(int, int);
 void myReshape(GLsizei, GLsizei);
 
@@ -40,7 +41,7 @@ GLsizei wh = 500, ww = 500; /* initial window size */
 GLfloat size = 3.0;   /* half side length of square */
 int draw_mode = 0; /* drawing mode */
 int rx, ry; /*raster position*/
-int cursorX, cursorY; //마우스 위치 저장 변수
+int cursorX, cursorY;
 
 GLfloat r = 1.0, g = 1.0, b = 1.0; /* drawing color */
 int fill = 0; /* fill flag */
@@ -239,10 +240,10 @@ void mouse(int btn, int state, int x, int y)
                     for (i = 0.0; i <= 3600; i += 0.036) {
                         angle = i * 3.141592 / 180.0;
                         glVertex2f((r * cos(angle)) + xp[0], (r * sin(angle)) + wh - yp[0]);
-                    }
-                    
+                    } 
+                    glEnd();
                 }
-                glEnd();
+                display2();
                 draw_mode = 0;
                 count = 0; 
                 break;
@@ -269,27 +270,44 @@ void mouse(int btn, int state, int x, int y)
 
 //지우개
 void mouse2(int x, int y) {
+    int n_y = wh - y;
+    double i, angle;
 
     switch (draw_mode) {
-        //지우개 모드일때
-        case(ERASER):
-            //현재 마우스 위치에 원하나 그리고
-            int n_y = wh - y;
+     //지우개 모드일때
+    case(ERASER):
+            //현재 마우스 위치에 원하나 그리고    
             glColor3f(0.8, 0.8, 0.8);
-            double i, angle;
-            if (x < ww) {
-                glBegin(GL_POLYGON);
-                for (i = 0.0; i <= 3600; i += 0.036) {
-                    angle = i * 3.141592 / 180.0;
-                    glVertex2f((10 * cos(angle)) + x, (10 * sin(angle)) + n_y);
-                }
+
+            glBegin(GL_POLYGON);
+            for (i = 0.0; i <= 3600; i += 0.036) {
+                 angle = i * 3.141592 / 180.0;
+                 glVertex2f((10 * cos(angle)) + x, (10 * sin(angle)) + n_y);    
             }
             glEnd();
+            display2();
             // 마우스 좌표 갱신
             cursorX = x;
             cursorY = y;
             break;
-    }
+
+        case(SPRAY):
+            glColor3f(r, g, b);
+            glBegin(GL_POINTS);
+            for (i = 0.0; i <= 360; i += 36) {
+                angle = i * 3.141592 / 180.0;
+                //mod 4를 통해 지정된 범위에서 점 찍기
+                glVertex2f(rand() % 4 * (10 * cos(angle)) + x, rand() % 4 * (10 * sin(angle)) + n_y);
+            }
+            glEnd();
+            display2(); //도형 선택창 침범 x
+            // 마우스 좌표 갱신
+            glPointSize(1.0);
+            cursorX = x;
+            cursorY = y;
+            break;
+        }
+    
     glPopAttrib();
     glFlush();
 }
@@ -308,6 +326,7 @@ int pick(int x, int y)
     //원그리기 메뉴
     else if (x < ww / 2 + ww / 10) return CIRCLE;
     else if (x < ww / 2 + ww / 5) return ERASER;
+    else if (x < ww / 2 + 3 * ww / 10) return SPRAY;
     else return 0;
 }
 
@@ -391,12 +410,24 @@ void display(void)
     screen_box(3 * ww / 10, wh - ww / 10, ww / 10);
     glColor3f(1.0, 1.0, 0.0);
     screen_box(2 * ww / 5, wh - ww / 10, ww / 10);
+    /*-------------------------------------------------------*/
+    //ui 구현 - 메뉴 사각형 추가
+    glColor3f(1.0, 1.0, 1.0);
+    screen_box(ww / 2, wh - ww / 10, ww / 10);
+    glColor3f(0.0, 1.0, 1.0);
+    screen_box(ww / 2 + ww / 10 , wh - ww / 10, ww / 10);
+    glColor3f(1.0, 0.0, 1.0);
+    screen_box(ww / 2 + ww / 5, wh - ww / 10, ww / 10);
+    /*-------------------------------------------------------*/
+    //ui 사각형
     glColor3f(0.0, 0.0, 0.0);
     screen_box(ww / 10 + ww / 40, wh - ww / 10 + ww / 40, ww / 20);
+    //ui 선
     glBegin(GL_LINES);
     glVertex2i(wh / 40, wh - ww / 20);
     glVertex2i(wh / 40 + ww / 20, wh - ww / 20);
     glEnd();
+    //ui 삼각형
     glBegin(GL_TRIANGLES);
     glVertex2i(ww / 5 + ww / 40, wh - ww / 10 + ww / 40);
     glVertex2i(ww / 5 + ww / 20, wh - ww / 40);
@@ -414,10 +445,70 @@ void display(void)
     shift += glutBitmapWidth(GLUT_BITMAP_9_BY_15, 'B');
     glRasterPos2i(2 * ww / 5 + shift, wh - ww / 20);
     glutBitmapCharacter(GLUT_BITMAP_9_BY_15, 'C');
+    glEnd();
+    /*-------------------------------------------------------*/
+    //ui 구현 - 메뉴 사각형 추가
+
+    /*-------------------------------------------------------*/
     glFlush();
     glPopAttrib();
 }
 
+//메뉴창만 초기화
+void display2(void){
+    int shift = 0;
+    glColor3f(1.0, 1.0, 1.0);
+    screen_box(0, wh - ww / 10, ww / 10);
+    glColor3f(1.0, 0.0, 0.0);
+    screen_box(ww / 10, wh - ww / 10, ww / 10);
+    glColor3f(0.0, 1.0, 0.0);
+    screen_box(ww / 5, wh - ww / 10, ww / 10);
+    glColor3f(0.0, 0.0, 1.0);
+    screen_box(3 * ww / 10, wh - ww / 10, ww / 10);
+    glColor3f(1.0, 1.0, 0.0);
+    screen_box(2 * ww / 5, wh - ww / 10, ww / 10);
+    /*-------------------------------------------------------*/
+    //ui 구현 - 메뉴 사각형 추가
+    glColor3f(1.0, 1.0, 1.0);
+    screen_box(ww / 2, wh - ww / 10, ww / 10);
+    glColor3f(0.0, 1.0, 1.0);
+    screen_box(ww / 2 + ww / 10, wh - ww / 10, ww / 10);
+    glColor3f(1.0, 0.0, 1.0);
+    screen_box(ww / 2 + ww / 5, wh - ww / 10, ww / 10);
+    /*-------------------------------------------------------*/ 
+    //ui 사각형
+    glColor3f(0.0, 0.0, 0.0);
+    screen_box(ww / 10 + ww / 40, wh - ww / 10 + ww / 40, ww / 20);
+    //ui 선
+    glBegin(GL_LINES);
+    glVertex2i(wh / 40, wh - ww / 20);
+    glVertex2i(wh / 40 + ww / 20, wh - ww / 20);
+    glEnd();
+    //ui 삼각형
+    glBegin(GL_TRIANGLES);
+    glVertex2i(ww / 5 + ww / 40, wh - ww / 10 + ww / 40);
+    glVertex2i(ww / 5 + ww / 20, wh - ww / 40);
+    glVertex2i(ww / 5 + 3 * ww / 40, wh - ww / 10 + ww / 40);
+    glEnd();
+    glPointSize(3.0);
+    glBegin(GL_POINTS);
+    glVertex2i(3 * ww / 10 + ww / 20, wh - ww / 20);
+    glEnd();
+    glRasterPos2i(2 * ww / 5, wh - ww / 20);
+    glutBitmapCharacter(GLUT_BITMAP_9_BY_15, 'A');
+    shift = glutBitmapWidth(GLUT_BITMAP_9_BY_15, 'A');
+    glRasterPos2i(2 * ww / 5 + shift, wh - ww / 20);
+    glutBitmapCharacter(GLUT_BITMAP_9_BY_15, 'B');
+    shift += glutBitmapWidth(GLUT_BITMAP_9_BY_15, 'B');
+    glRasterPos2i(2 * ww / 5 + shift, wh - ww / 20);
+    glutBitmapCharacter(GLUT_BITMAP_9_BY_15, 'C');
+    /*-------------------------------------------------------*/
+    //ui 구현 - 메뉴 사각형 추가
+
+    /*-------------------------------------------------------*/
+    glFlush();
+    glPopAttrib();
+}
 
 int main(int argc, char** argv)
 {
