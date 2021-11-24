@@ -286,7 +286,7 @@ void mouse(int btn, int state, int x, int y)
     }
 }
 
-//지우개
+//지우개 스프레이 브러쉬
 void mouse2(int x, int y) {
     int n_y = wh - y;
     double i, angle;
@@ -365,7 +365,7 @@ int pick(int x, int y)
     else return 0;
 }
 
-//아마 사각형을 그리는 함수인듯???
+//메뉴 박스
 void screen_box(int x, int y, int s)
 {
     glBegin(GL_QUADS);
