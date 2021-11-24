@@ -1,5 +1,10 @@
-﻿/* This program illustrates the use of the glut library for
+/* This program illustrates the use of the glut library for
 interfacing with a window system */
+#include <glut.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <windows.h>
 
 //사용자 정의 상수
 #define NULL 0
@@ -13,16 +18,12 @@ interfacing with a window system */
 #define SPRAY 8
 #define DRAW 9 // 브러쉬
 
-#include <glut.h>
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-
-void mouse(int, int, int, int);
+#define _CRT_SECURE_NO_WARNINGS
 void mouse2(int, int);
+void display2(void);
+void mouse(int, int, int, int);
 void key(unsigned char, int, int);
 void display(void);
-void display2(void); //메뉴창만 초기화
 void drawSquare(int, int);
 void myReshape(GLsizei, GLsizei);
 
@@ -35,13 +36,13 @@ void color_menu(int);
 void pixel_menu(int);
 void fill_menu(int);
 int pick(int, int);
-
+void captureScreen();
+void loadImage();
 void line_menu(int); //라인 모양 메뉴
 void random_color(); //랜덤 색상
 void brush(int, int); //브러쉬
 void bcolor_menu(int); //배경 색상
 void line_dotted(int); //점선
-
 /* globals */
 
 GLsizei wh = 500, ww = 500; /* initial window size */
@@ -60,6 +61,7 @@ int fill = 0; /* fill flag */
 void drawSquare(int x, int y)
 {
     y = wh - y;
+    //랜덤 색
     glColor3ub((char)rand() % 256, (char)rand() % 256, (char)rand() % 256);
     glBegin(GL_POLYGON);
     glVertex2f(x + size, y + size);
@@ -72,7 +74,7 @@ void drawSquare(int x, int y)
 
 /* rehaping routine called whenever window is resized
 or moved */
-
+//창조절 크기
 void myReshape(GLsizei w, GLsizei h)
 {
 
@@ -130,10 +132,8 @@ void mouse(int btn, int state, int x, int y)
     if (btn == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
         glPushAttrib(GL_ALL_ATTRIB_BITS); //?
-
         if (ran_check == 1)	// 1이면 랜덤 색상 적용
             random_color();
-
         //마우스 왼쪽 버튼이 눌린  좌표 저장 
         where = pick(x, y);
         cursorX = x;
@@ -141,7 +141,6 @@ void mouse(int btn, int state, int x, int y)
         line_dotted(line); //점선 속성 설정
         glColor3f(r, g, b);
         glLineWidth(size); //두께 설정
-
         //눌린 위치가 메뉴 창인가 아닌가 판단
         if (where != 0)
         {
@@ -224,7 +223,7 @@ void mouse(int btn, int state, int x, int y)
                 count = 0;
             }
             break;
-            //위의 사각형 점 찍기 추가
+            //위의 네모점 찍기 추가
         case(POINTS):
         {
             drawSquare(x, y);
@@ -238,7 +237,6 @@ void mouse(int btn, int state, int x, int y)
             glRasterPos2i(rx, ry);
             count = 0;
         }
-        //원그리기
         case(CIRCLE):
         {
             if (count == 0) {
@@ -278,21 +276,17 @@ void mouse(int btn, int state, int x, int y)
             glEnd();
 
             break;
-
         }
         glPopAttrib();
         glFlush();
-
     }
 }
-
-//지우개
 void mouse2(int x, int y) {
     int n_y = wh - y;
     double i, angle;
 
     switch (draw_mode) {
-    //지우개 모드일때
+        //지우개 모드일때
     case(ERASER):
         //현재 마우스 위치에 원하나 그리고    
         glColor3f(0.8, 0.8, 0.8);
@@ -356,16 +350,17 @@ int pick(int x, int y)
     else if (x < 2 * ww / 10) return RECTANGLE;
     else if (x < 3 * ww / 10) return TRIANGLE;
     else if (x < 4 * ww / 10) return POINTS;
-    else if (x < 5 * ww / 10)  return TEXT;
+    else if (x < 5 * ww / 10) return TEXT;
 
     else if (x < 6 * ww / 10) return CIRCLE;
     else if (x < 7 * ww / 10) return ERASER;
     else if (x < 8 * ww / 10) return SPRAY;
     else if (x < 9 * ww / 10) return DRAW;
+
     else return 0;
 }
 
-//아마 사각형을 그리는 함수인듯???
+//아마 사각형을 그리는 함수인듯
 void screen_box(int x, int y, int s)
 {
     glBegin(GL_QUADS);
@@ -380,7 +375,9 @@ void screen_box(int x, int y, int s)
 void right_menu(int id)
 {
     if (id == 1) exit(0);
-    else display();
+    else if (id == 2) display();
+    else if (id == 3) captureScreen();
+    else if (id == 4) loadImage();
 }
 
 //창을 띄우는 메뉴이기 때문에 마땅한 동작이 없는 함수
@@ -389,7 +386,7 @@ void middle_menu(int id)
 
 }
 
-//도형 및 글자들의 색을 지정하는 메뉴
+//색을 지정하는 메뉴
 void color_menu(int id)
 {
     if (id == 1) { r = 1.0; g = 0.0; b = 0.0; }
@@ -400,7 +397,6 @@ void color_menu(int id)
     else if (id == 6) { r = 1.0; g = 1.0; b = 0.0; }
     else if (id == 7) { r = 1.0; g = 1.0; b = 1.0; }
     else if (id == 8) { r = 0.0; g = 0.0; b = 0.0; }
-
 }
 
 //글자크기를 조절하는 동작
@@ -428,7 +424,6 @@ void key(unsigned char k, int xx, int yy)
     rx += glutBitmapWidth(GLUT_BITMAP_9_BY_15, k);
 
 }
-/*----------------------------------------------------------------------*/
 void random_color() //랜덤 컬러 생성
 {
     r = (float)(rand() % 256) / 255;
@@ -491,10 +486,6 @@ void line_menu(int id)
 }
 
 
-/*----------------------------------------------------------------------*/
-
-
-
 //윈도우에 메뉴 창 그리기
 void display(void)
 {
@@ -507,20 +498,20 @@ void display(void)
     glColor3f(1.0, 0.0, 0.0);
     screen_box(ww / 10, wh - ww / 10, ww / 10);
     glColor3f(0.0, 1.0, 0.0);
-    screen_box(2* ww / 10, wh - ww / 10, ww / 10);
+    screen_box(2 * ww / 10, wh - ww / 10, ww / 10);
     glColor3f(0.0, 0.0, 1.0);
     screen_box(3 * ww / 10, wh - ww / 10, ww / 10);
     glColor3f(1.0, 1.0, 0.0);
     screen_box(4 * ww / 10, wh - ww / 10, ww / 10);
     /*-------------------------------------------------------*/
-    //ui 구현 - 메뉴 사각형 추가
+//ui 구현 - 메뉴 사각형 추가
     glColor3f(1.0, 1.0, 1.0);
     screen_box(5 * ww / 10, wh - ww / 10, ww / 10);
     glColor3f(0.0, 1.0, 1.0);
-    screen_box(6*  ww / 10, wh - ww / 10, ww / 10);
+    screen_box(6 * ww / 10, wh - ww / 10, ww / 10);
     glColor3f(1.0, 0.0, 1.0);
-    screen_box(7* ww / 10, wh - ww / 10, ww / 10);
-    
+    screen_box(7 * ww / 10, wh - ww / 10, ww / 10);
+
     glColor3f(0.5, 0.1, 0.1); //브러쉬 메뉴 박스
     screen_box(8 * ww / 10, wh - ww / 10, ww / 10);
     /*-------------------------------------------------------*/
@@ -528,12 +519,10 @@ void display(void)
     //ui 사각형
     glColor3f(0.0, 0.0, 0.0);
     screen_box(ww / 10 + ww / 40, wh - ww / 10 + ww / 40, ww / 20);
-    //ui 선
     glBegin(GL_LINES);
     glVertex2i(wh / 40, wh - ww / 20);
     glVertex2i(wh / 40 + ww / 20, wh - ww / 20);
     glEnd();
-    //ui 삼각형
     glBegin(GL_TRIANGLES);
     glVertex2i(ww / 5 + ww / 40, wh - ww / 10 + ww / 40);
     glVertex2i(ww / 5 + ww / 20, wh - ww / 40);
@@ -552,15 +541,10 @@ void display(void)
     glRasterPos2i(2 * ww / 5 + shift, wh - ww / 20);
     glutBitmapCharacter(GLUT_BITMAP_9_BY_15, 'C');
     glEnd();
-    /*-------------------------------------------------------*/
-    //ui 구현 - 메뉴 사각형 추가
 
-    /*-------------------------------------------------------*/
     glFlush();
     glPopAttrib();
 }
-
-//메뉴창만 초기화
 void display2(void) {
     int shift = 0;
     glColor3f(1.0, 1.0, 1.0);
@@ -616,8 +600,54 @@ void display2(void) {
     //ui 구현 - 메뉴 사각형 추가
 
     /*-------------------------------------------------------*/
+}
+//그림 캡처(이미지 저장)
+void captureScreen() {
+
+    BITMAPFILEHEADER bmpfile;
+    BITMAPINFOHEADER bmpinfo;
+    GLubyte* pixels = new GLubyte[sizeof(GLubyte) * ww * (wh - ww / 11) * 3]; // 저장할 픽셀 메모리 변수, 객체 생성(C++)
+    // 1바이트*윈도우 넓이*(윈도우 높이-윈도우 넓이/11)*3?
+
+    FILE* file = fopen("capture.bmp", "wb");//저장할 파일이름 지정
+    glReadPixels(0, 0, ww, (wh - ww / 11), GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels);      // 픽셀 읽기
+
+    memset(&bmpfile, 0, sizeof(bmpfile)); // bmpfile 메모리에 저장하기 위해 초기화
+    memset(&bmpinfo, 0, sizeof(bmpinfo)); // bmpinfo 메모리에 저장하기 위해 초기화
+    bmpfile.bfType = 'MB';
+    bmpfile.bfSize = sizeof(bmpfile) + sizeof(bmpinfo) + ww * (wh - ww / 11) * 3;		// 버퍼 사이즈
+    bmpfile.bfOffBits = sizeof(bmpfile) + sizeof(bmpinfo);		// 파일에서 비트맵 데이터가 있는 위치
+
+    bmpinfo.biSize = sizeof(bmpinfo); // 구조체 크기
+    bmpinfo.biWidth = ww; // 이미지 가로
+    bmpinfo.biHeight = (wh - ww / 11); // 이미지 세로
+    bmpinfo.biPlanes = 1; // 플레인수
+    bmpinfo.biBitCount = 24; // 비트수 
+    bmpinfo.biSizeImage = ww * (wh - ww / 11) * 3; // 이미지의크기
+
+    fwrite(&bmpfile, sizeof(bmpfile), 1, file);
+    fwrite(&bmpinfo, sizeof(bmpinfo), 1, file);
+    fwrite(pixels, sizeof(unsigned char), (wh - ww / 11) * ww * 3, file);		// 저장
+
+    fclose(file);
+    free(pixels);
+}
+
+void loadImage() {
+    BITMAPFILEHEADER bmpfile;//비트맵 파일헤더,정보 변수 
+    BITMAPINFOHEADER bmpinfo;
+    FILE* fp = fopen("capture.bmp", "rb");//파일스트림 읽기모드, capture.bmp라는 파일이름이 소스코드 경로에 존재해야함
+    if (fp == NULL)return;
+    fread(&bmpfile, sizeof(BITMAPFILEHEADER), 1, fp);//파일 읽기 
+    fread(&bmpinfo, sizeof(BITMAPFILEHEADER), 1, fp);
+    DWORD bitsize = bmpinfo.biSizeImage;//이미지 비트크기 
+    GLubyte* bits = new GLubyte[sizeof(GLubyte) * bitsize * 3];//메모리 할당 객체 생성 
+    fread(bits, 1, bitsize, fp);//bits에 파일정보 저장
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);         glDrawPixels(ww, wh - ww / 11, GL_BGR_EXT, GL_UNSIGNED_BYTE, bits);
     glFlush();
     glPopAttrib();
+    fclose(fp);
 }
 
 int main(int argc, char** argv)
@@ -642,12 +672,12 @@ int main(int argc, char** argv)
     glutAddMenuEntry("White", 7);
     glutAddMenuEntry("Black", 8);
 
-    //color_menu의 형태와 같음
+    //color_menu의 형태와 같음222
     p_menu = glutCreateMenu(pixel_menu);
     glutAddMenuEntry("increase pixel size", 1);
     glutAddMenuEntry("decrease pixel size", 2);
 
-    //이하 동문
+    //333
     f_menu = glutCreateMenu(fill_menu);
     glutAddMenuEntry("fill on", 1);
     glutAddMenuEntry("fill off", 2);
@@ -672,17 +702,17 @@ int main(int argc, char** argv)
     glutAddMenuEntry("Dotted Line 5", 5);
     glutAddMenuEntry("Dotted Line 6", 6);
     glutAddMenuEntry("Full Line", 7);
-
     //오른쪽 마우스 버튼 눌릴시 나타나는 메뉴 창
     glutCreateMenu(right_menu);
     //이하 1~2번은 함수에 들어갈 인덱스 파라미터
     glutAddMenuEntry("quit", 1);
     glutAddMenuEntry("clear", 2);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
-
+    glutAddMenuEntry("save", 3);//저장
+    glutAddMenuEntry("load", 4);
     //마우스 휠 버튼을 클릭시 나타나는 메뉴 창
     glutCreateMenu(middle_menu); //middle_menu는 창만 띄우기 때문에 따로 함수의 동작은 없음
-    //메뉴창 아래에 위에서 정의한 메뉴들 창을 띄우는 창
+        //메뉴창 아래에 위에서 정의한 메뉴들 창을 띄우는 창
     glutAddSubMenu("Colors", c_menu);
     glutAddSubMenu("Pixel Size", p_menu);
     glutAddSubMenu("Fill", f_menu);
