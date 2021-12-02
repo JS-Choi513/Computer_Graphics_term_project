@@ -333,15 +333,15 @@ void mouse2(int x, int y) {
         cursorX = x;
         cursorY = y;
         break;
-    //스프레이
+        //스프레이
     case(SPRAY):
         glColor3f(r, g, b);
         glPointSize(1.0);
-        glBegin(GL_POINTS); 
+        glBegin(GL_POINTS);
         for (i = 0.0; i <= 360; i += 36) {
             angle = i * 3.141592 / 180.0;
             //mod 4를 통해 지정된 범위에서 점 찍기
-            glVertex2f(rand() % 4 * (circle_r / 4 * cos(angle)) + x, rand() % 4 * (circle_r / 4 *sin(angle)) + n_y);
+            glVertex2f(rand() % 4 * (circle_r / 4 * cos(angle)) + x, rand() % 4 * (circle_r / 4 * sin(angle)) + n_y);
         }
         glEnd();
         display2(); //도형 선택창 침범 x
@@ -349,7 +349,7 @@ void mouse2(int x, int y) {
         cursorX = x;
         cursorY = y;
         break;
-    //브러쉬
+        //브러쉬
     case(DRAW):
         glColor3f(r, g, b);
 
@@ -493,7 +493,7 @@ void draw_menu(int id) {
             circle_r += 3;
     }
     else {
-        if(circle_r > 4)
+        if (circle_r > 4)
             circle_r -= 3;
     }
 }
@@ -582,14 +582,14 @@ void display(void)
     screen_box(6 * ww / 10 + ww / 33, wh - ww / 10 + ww / 50, ww / 25);
     glColor3f(0.0, 0.0, 0.0);
     screen_box(6 * ww / 10 + ww / 33, wh - ww / 10 + ww / 30, ww / 25);
-    
+
 
     //ui 선
     glBegin(GL_LINES);
     glVertex2i(wh / 40, wh - ww / 20);
     glVertex2i(wh / 40 + ww / 20, wh - ww / 20);
     glEnd();
-   
+
     glBegin(GL_TRIANGLES);
     glVertex2i(ww / 5 + ww / 40, wh - ww / 10 + ww / 40);
     glVertex2i(ww / 5 + ww / 20, wh - ww / 40);
@@ -617,7 +617,7 @@ void display(void)
         glVertex2f((15 * cos(angle)) + ww / 2 + ww / 20, (15 * sin(angle)) + wh - ww / 10 + ww / 20);
     }
     glEnd();
-    
+
 
     //스프레이
     glPointSize(1.0);
@@ -766,7 +766,7 @@ void loadImage() {
 
 int main(int argc, char** argv)
 {
-    int c_menu, p_menu, f_menu, b_menu, l_menu, e_menu;
+    int c_menu, p_menu, f_menu, b_menu, l_menu, e_menu, d_menu;
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
@@ -805,7 +805,7 @@ int main(int argc, char** argv)
     glutAddMenuEntry("Yellow", 6);
     glutAddMenuEntry("White", 7);
     glutAddMenuEntry("Black", 8);
-    glutAddMenuEntry("Default", 9);
+    glutAddMenuEntry("Gray", 9);
     glutAddMenuEntry("Random Color", 10);
 
     l_menu = glutCreateMenu(line_menu);
@@ -817,9 +817,9 @@ int main(int argc, char** argv)
     glutAddMenuEntry("Dotted Line 6", 6);
     glutAddMenuEntry("Full Line", 7);
 
-    p_menu = glutCreateMenu(draw_menu);
-    glutAddMenuEntry("Increase Size", 1);
-    glutAddMenuEntry("Decrease Size", 2);
+    d_menu = glutCreateMenu(draw_menu);
+    glutAddMenuEntry("Increase", 1);
+    glutAddMenuEntry("Decrease", 2);
     //오른쪽 마우스 버튼 눌릴시 나타나는 메뉴 창
     glutCreateMenu(right_menu);
     //이하 1~2번은 함수에 들어갈 인덱스 파라미터
@@ -837,9 +837,9 @@ int main(int argc, char** argv)
     glutAddSubMenu("Fill", f_menu);
     glutAddSubMenu("Background Color", b_menu);
     glutAddSubMenu("Line", l_menu);
-    glutAddSubMenu("Draw Size", p_menu);
+    glutAddSubMenu("Brush Size", d_menu);
     glutAttachMenu(GLUT_MIDDLE_BUTTON);
- 
+
     myinit();
     glutReshapeFunc(myReshape);
     glutKeyboardFunc(key);
