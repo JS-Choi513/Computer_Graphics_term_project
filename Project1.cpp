@@ -19,7 +19,7 @@ interfacing with a window system */
 #define ERASER 7
 #define SPRAY 8
 #define DRAW 9 // 브러쉬
-#define REMOVE 10
+//#define REMOVE 1
 
 #define _CRT_SECURE_NO_WARNINGS
 void mouse2(int, int);
@@ -272,8 +272,8 @@ void mouse(int btn, int state, int x, int y)
         //지우기 기능
         case(ERASER):
         {
-            if (erase == 1)				// 변수가 1이면 지우개, 0이면 잘라내기
-                break;
+           // if (erase == 2)				
+            //    break;
             glColor3f(r2, g2, b2);
             if (count == 0)
             {
@@ -282,7 +282,7 @@ void mouse(int btn, int state, int x, int y)
                 yp[0] = y;
             }
             else
-            {								// 배경 색상으로 사각형 그래서 잘라내기 효과
+            {							
                 glBegin(GL_POLYGON);
                 glVertex2i(x, wh - y);
                 glVertex2i(x, wh - yp[0]);
@@ -291,8 +291,7 @@ void mouse(int btn, int state, int x, int y)
                 glEnd();
                 draw_mode = 0;
                 count = 0;
-            }
-            glEnd();
+            }         
             break;
         }
         display2();
@@ -737,19 +736,22 @@ void captureScreen() {
 }
 //그림 로드
 void loadImage() {
-    BITMAPFILEHEADER bmpfile;//비트맵 파일헤더,정보 변수 
-    BITMAPINFOHEADER bmpinfo;
-    FILE* fp = fopen("capture.bmp", "rb");//파일스트림 읽기모드, capture.bmp라는 파일이름이 소스코드 경로에 존재해야함
-    if (fp == NULL)return;
-    fread(&bmpfile, sizeof(BITMAPFILEHEADER), 1, fp);//파일 읽기 
-    fread(&bmpinfo, sizeof(BITMAPFILEHEADER), 1, fp);
-    DWORD bitsize = bmpinfo.biSizeImage;//이미지 비트크기 
-    GLubyte* bits = new GLubyte[sizeof(GLubyte) * bitsize * 3];//메모리 할당 객체 생성 
-    fread(bits, 1, bitsize, fp);//bits에 파일정보 저장
+    BITMAPFILEHEADER bmpfile; // 비트맵파일헤더
+    BITMAPINFOHEADER bmpinfo; // 비트맵정보헤더
+    FILE* fp = fopen("capture.bmp", "rb");
+    if (fp == NULL) return;
+
+    fread(&bmpfile, sizeof(BITMAPFILEHEADER), 1, fp); //파일로부터 header로 BITMAPFILEHEADER 데이터 저장하기
+    fread(&bmpinfo, sizeof(BITMAPINFOHEADER), 1, fp); //파일로부터 bmp로 BITMAPINFO 데이터 저장하기
+
+    DWORD bitsize = bmpinfo.biSizeImage; // bits의 크기 지정
+    GLubyte* bits = new GLubyte[sizeof(GLubyte) * bitsize * 3];		// bits에 메모리 할당, 객체 생성 (C++)
+    fread(bits, 1, bitsize, fp); // bits에 이미지 정보 저장하기
+
     glEnableClientState(GL_VERTEX_ARRAY);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);         glDrawPixels(ww, wh - ww / 11, GL_BGR_EXT, GL_UNSIGNED_BYTE, bits);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);       // 포맷
+    glDrawPixels(ww, wh - ww / 11, GL_BGR_EXT, GL_UNSIGNED_BYTE, bits);		// 화면에 뿌리기
     glFlush();
-    glPopAttrib();
     fclose(fp);
 }
 
