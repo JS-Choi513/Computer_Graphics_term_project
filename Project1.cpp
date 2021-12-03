@@ -1,4 +1,4 @@
-﻿/* This program illustrates the use of the glut library for
+/* This program illustrates the use of the glut library for
 interfacing with a window system */
 #define _CRT_SECURE_NO_WARNINGS
 #include <glut.h>
@@ -272,20 +272,6 @@ void mouse(int btn, int state, int x, int y)
         //지우기 기능
         case(ERASER):
         {
-            glColor3f(r2, g2, b2);
-            y = wh - y;
-            double i, angle;
-            if (x < ww) {
-                glBegin(GL_POLYGON);
-                for (i = 0.0; i <= 3600; i += 0.036) {
-                    angle = i * 3.141592 / 180.0;
-                    glVertex2f((circle_r * cos(angle)) + x, (circle_r * sin(angle)) + y);
-                }
-            }
-            glEnd();
-            break;
-        }
-        case(REMOVE):                   // 잘라내기
             if (erase == 1)				// 변수가 1이면 지우개, 0이면 잘라내기
                 break;
             glColor3f(r2, g2, b2);
@@ -306,17 +292,20 @@ void mouse(int btn, int state, int x, int y)
                 draw_mode = 0;
                 count = 0;
             }
+            glEnd();
             break;
         }
         display2();
         glPopAttrib();
         glFlush();
+        }
     }
 }
 void mouse2(int x, int y) {
     int n_y = wh - y;
     double i, angle;
-
+    static int count;
+    static int xp[2], yp[2];
     switch (draw_mode) {
         //지우개 모드
     case(ERASER):
@@ -387,7 +376,7 @@ int pick(int x, int y)
     else if (x < 7 * ww / 10) return ERASER;
     else if (x < 8 * ww / 10) return SPRAY;
     else if (x < 9 * ww / 10) return DRAW;
-    else if (x < 10 * ww / 110) return REMOVE;
+
 
     else return 0;
 }
@@ -828,7 +817,9 @@ int main(int argc, char** argv)
     glutAttachMenu(GLUT_RIGHT_BUTTON);
     glutAddMenuEntry("save", 3);//저장
     glutAddMenuEntry("load", 4);
-
+    e_menu = glutCreateMenu(erase_menu);
+    glutAddMenuEntry("Eraser", 1);
+    glutAddMenuEntry("Crop", 2);
     //마우스 휠 버튼을 클릭시 나타나는 메뉴 창
     glutCreateMenu(middle_menu); //middle_menu는 창만 띄우기 때문에 따로 함수의 동작은 없음
      //메뉴창 아래에 위에서 정의한 메뉴들 창을 띄우는 창
@@ -838,6 +829,7 @@ int main(int argc, char** argv)
     glutAddSubMenu("Background Color", b_menu);
     glutAddSubMenu("Line", l_menu);
     glutAddSubMenu("Brush Size", d_menu);
+    glutAddSubMenu("Erase Type", e_menu);
     glutAttachMenu(GLUT_MIDDLE_BUTTON);
 
     myinit();
