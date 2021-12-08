@@ -19,7 +19,7 @@ interfacing with a window system */
 #define ERASER 7
 #define SPRAY 8
 #define DRAW 9 // 브러쉬
-//#define REMOVE 1
+#define REMOVE 10
 
 #define _CRT_SECURE_NO_WARNINGS
 void mouse2(int, int);
@@ -55,7 +55,7 @@ int rx, ry; /*raster position*/
 int cursorX, cursorY;
 int line = 0; //라인 메뉴 값
 int ran_check = 0; //랜덤 색상 적용 유무
-int erase = 1;
+int erase = 0;
 GLfloat r = 0.0, g = 0.0, b = 0.0; /* drawing color */
 GLfloat r2 = 1.0, g2 = 1.0, b2 = 1.0; /* 배경 색상 */
 int fill = 0; /* fill flag */
@@ -272,42 +272,57 @@ void mouse(int btn, int state, int x, int y)
         //지우기 기능
         case(ERASER):
         {
-           // if (erase == 2)				
-            //    break;
-            glColor3f(r2, g2, b2);
-            if (count == 0)
-            {
-                count++;
-                xp[0] = x;
-                yp[0] = y;
+            if (erase == 0) {
+                glColor3f(r2, g2, b2);
+                y = wh - y;
+                double i, angle;
+                if (x < ww) {
+                    glBegin(GL_POLYGON);
+                    for (i = 0.0; i <= 3600; i += 0.036) {
+                        angle = i * 3.141592 / 180.0;
+                        glVertex2f((circle_r * cos(angle)) + x, (circle_r * sin(angle)) + y);
+                    }
+                }
             }
-            else
-            {							
-                glBegin(GL_POLYGON);
-                glVertex2i(x, wh - y);
-                glVertex2i(x, wh - yp[0]);
-                glVertex2i(xp[0], wh - yp[0]);
-                glVertex2i(xp[0], wh - y);
-                glEnd();
-                draw_mode = 0;
-                count = 0;
-            }         
+            else if (erase == 1) {
+                glColor3f(r2, g2, b2);
+                if (count == 0)
+                {
+                    count++;
+                    xp[0] = x;
+                    yp[0] = y;
+                }
+                else
+                {								// 배경 색상으로 사각형 그래서 잘라내기 효과
+                    glBegin(GL_POLYGON);
+                    glVertex2i(x, wh - y);
+                    glVertex2i(x, wh - yp[0]);
+                    glVertex2i(xp[0], wh - yp[0]);
+                    glVertex2i(xp[0], wh - y);
+                    glEnd();
+                    draw_mode = 0;
+                    count = 0;
+                }
+            }
+            glEnd();
             break;
+            }
         }
         display2();
         glPopAttrib();
         glFlush();
-        }
     }
 }
 void mouse2(int x, int y) {
     int n_y = wh - y;
     double i, angle;
-    static int count;
-    static int xp[2], yp[2];
+
     switch (draw_mode) {
         //지우개 모드
     case(ERASER):
+        if (erase == 1) {
+            break;
+        }
         glColor3f(r2, g2, b2);
 
         glBegin(GL_POLYGON);
@@ -376,7 +391,6 @@ int pick(int x, int y)
     else if (x < 8 * ww / 10) return SPRAY;
     else if (x < 9 * ww / 10) return DRAW;
 
-
     else return 0;
 }
 
@@ -406,9 +420,11 @@ void middle_menu(int id)
     if (id == 7) draw_mode = 7;
 }
 
-void erase_menu(int id)
-{
-    erase = id;
+void erase_menu(int id) {
+    if (id == 1) {
+        erase = 0;//지우개
+    }
+    else erase = 1;//잘라내기
 }
 
 //색을 지정하는 메뉴
@@ -485,6 +501,8 @@ void draw_menu(int id) {
             circle_r -= 3;
     }
 }
+
+
 
 void line_dotted(int id) //점선
 {
@@ -688,7 +706,7 @@ void display2(void) {
         glVertex2f((15 * cos(angle)) + ww / 2 + ww / 20, (15 * sin(angle)) + wh - ww / 10 + ww / 20);
     }
     glEnd();
-    //지우개
+    
 
     //스프레이
     glPointSize(1.0);
@@ -736,22 +754,19 @@ void captureScreen() {
 }
 //그림 로드
 void loadImage() {
-    BITMAPFILEHEADER bmpfile; // 비트맵파일헤더
-    BITMAPINFOHEADER bmpinfo; // 비트맵정보헤더
-    FILE* fp = fopen("capture.bmp", "rb");
-    if (fp == NULL) return;
-
-    fread(&bmpfile, sizeof(BITMAPFILEHEADER), 1, fp); //파일로부터 header로 BITMAPFILEHEADER 데이터 저장하기
-    fread(&bmpinfo, sizeof(BITMAPINFOHEADER), 1, fp); //파일로부터 bmp로 BITMAPINFO 데이터 저장하기
-
-    DWORD bitsize = bmpinfo.biSizeImage; // bits의 크기 지정
-    GLubyte* bits = new GLubyte[sizeof(GLubyte) * bitsize * 3];		// bits에 메모리 할당, 객체 생성 (C++)
-    fread(bits, 1, bitsize, fp); // bits에 이미지 정보 저장하기
-
+    BITMAPFILEHEADER bmpfile;//비트맵 파일헤더,정보 변수 
+    BITMAPINFOHEADER bmpinfo;
+    FILE* fp = fopen("capture.bmp", "rb");//파일스트림 읽기모드, capture.bmp라는 파일이름이 소스코드 경로에 존재해야함
+    if (fp == NULL)return;
+    fread(&bmpfile, sizeof(BITMAPFILEHEADER), 1, fp);//파일 읽기 
+    fread(&bmpinfo, sizeof(BITMAPFILEHEADER), 1, fp);
+    DWORD bitsize = bmpinfo.biSizeImage;//이미지 비트크기 
+    GLubyte* bits = new GLubyte[sizeof(GLubyte) * bitsize * 3];//메모리 할당 객체 생성 
+    fread(bits, 1, bitsize, fp);//bits에 파일정보 저장
     glEnableClientState(GL_VERTEX_ARRAY);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);       // 포맷
-    glDrawPixels(ww, wh - ww / 11, GL_BGR_EXT, GL_UNSIGNED_BYTE, bits);		// 화면에 뿌리기
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);         glDrawPixels(ww, wh - ww / 11, GL_BGR_EXT, GL_UNSIGNED_BYTE, bits);
     glFlush();
+    glPopAttrib();
     fclose(fp);
 }
 
@@ -811,6 +826,9 @@ int main(int argc, char** argv)
     d_menu = glutCreateMenu(draw_menu);
     glutAddMenuEntry("Increase", 1);
     glutAddMenuEntry("Decrease", 2);
+    e_menu = glutCreateMenu(erase_menu);
+    glutAddMenuEntry("Erase", 1);
+    glutAddMenuEntry("Crop", 0);
     //오른쪽 마우스 버튼 눌릴시 나타나는 메뉴 창
     glutCreateMenu(right_menu);
     //이하 1~2번은 함수에 들어갈 인덱스 파라미터
@@ -819,9 +837,7 @@ int main(int argc, char** argv)
     glutAttachMenu(GLUT_RIGHT_BUTTON);
     glutAddMenuEntry("save", 3);//저장
     glutAddMenuEntry("load", 4);
-    e_menu = glutCreateMenu(erase_menu);
-    glutAddMenuEntry("Eraser", 1);
-    glutAddMenuEntry("Crop", 2);
+
     //마우스 휠 버튼을 클릭시 나타나는 메뉴 창
     glutCreateMenu(middle_menu); //middle_menu는 창만 띄우기 때문에 따로 함수의 동작은 없음
      //메뉴창 아래에 위에서 정의한 메뉴들 창을 띄우는 창
